@@ -3,9 +3,11 @@ WORKDIR /src
 
 COPY services/TrackMint.Contracts/TrackMint.Contracts.csproj services/TrackMint.Contracts/
 COPY services/TrackMint.FinanceService/TrackMint.FinanceService.csproj services/TrackMint.FinanceService/
+COPY backend/ backend/
 RUN dotnet restore services/TrackMint.FinanceService/TrackMint.FinanceService.csproj
 
 COPY services/ services/
+COPY backend/ backend/
 RUN dotnet publish services/TrackMint.FinanceService/TrackMint.FinanceService.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0

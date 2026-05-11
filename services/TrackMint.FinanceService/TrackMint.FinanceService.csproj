@@ -4,6 +4,26 @@
     <ProjectReference Include="..\TrackMint.Contracts\TrackMint.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Domain\**\*.cs" Exclude="..\..\backend\PersonalFinanceTracker.Domain\bin\**\*;..\..\backend\PersonalFinanceTracker.Domain\obj\**\*" Link="Backend\Domain\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Application\**\*.cs" Exclude="..\..\backend\PersonalFinanceTracker.Application\bin\**\*;..\..\backend\PersonalFinanceTracker.Application\obj\**\*" Link="Backend\Application\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Infrastructure\**\*.cs" Exclude="..\..\backend\PersonalFinanceTracker.Infrastructure\bin\**\*;..\..\backend\PersonalFinanceTracker.Infrastructure\obj\**\*" Link="Backend\Infrastructure\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\AccountsController.cs" Link="Backend\Api\Controllers\AccountsController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\BudgetsController.cs" Link="Backend\Api\Controllers\BudgetsController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\CategoriesController.cs" Link="Backend\Api\Controllers\CategoriesController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\GoalsController.cs" Link="Backend\Api\Controllers\GoalsController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\RecurringController.cs" Link="Backend\Api\Controllers\RecurringController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\RulesController.cs" Link="Backend\Api\Controllers\RulesController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\TransactionsController.cs" Link="Backend\Api\Controllers\TransactionsController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Middleware\ExceptionHandlingMiddleware.cs" Link="Backend\Api\Middleware\ExceptionHandlingMiddleware.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>

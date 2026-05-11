@@ -4,6 +4,23 @@
     <ProjectReference Include="..\TrackMint.Contracts\TrackMint.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Domain\**\*.cs" Exclude="..\..\backend\PersonalFinanceTracker.Domain\bin\**\*;..\..\backend\PersonalFinanceTracker.Domain\obj\**\*" Link="Backend\Domain\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Application\**\*.cs" Exclude="..\..\backend\PersonalFinanceTracker.Application\bin\**\*;..\..\backend\PersonalFinanceTracker.Application\obj\**\*" Link="Backend\Application\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Infrastructure\**\*.cs" Exclude="..\..\backend\PersonalFinanceTracker.Infrastructure\bin\**\*;..\..\backend\PersonalFinanceTracker.Infrastructure\obj\**\*" Link="Backend\Infrastructure\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\DashboardController.cs" Link="Backend\Api\Controllers\DashboardController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\ForecastController.cs" Link="Backend\Api\Controllers\ForecastController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\InsightsController.cs" Link="Backend\Api\Controllers\InsightsController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Controllers\ReportsController.cs" Link="Backend\Api\Controllers\ReportsController.cs" />
+    <Compile Include="..\..\backend\PersonalFinanceTracker.Api\Middleware\ExceptionHandlingMiddleware.cs" Link="Backend\Api\Middleware\ExceptionHandlingMiddleware.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>

@@ -9,6 +9,7 @@ services:
       - "5434:5432"
     volumes:
       - trackmint-ms-db:/var/lib/postgresql/data
+      - ./services/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -45,6 +46,12 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=auth_db;Username=postgres;Password=postgres
+      Jwt__Issuer: TrackMint
+      Jwt__Audience: TrackMint.Client
+      Jwt__SigningKey: trackmint-local-development-signing-key-change-before-production
+      Jwt__AccessTokenMinutes: 30
+      Jwt__RefreshTokenDays: 7
+      Jwt__PasswordResetMinutes: 15
       RabbitMq__Host: rabbitmq
     depends_on:
       - db
@@ -60,6 +67,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=finance_db;Username=postgres;Password=postgres
+      Jwt__Issuer: TrackMint
+      Jwt__Audience: TrackMint.Client
+      Jwt__SigningKey: trackmint-local-development-signing-key-change-before-production
       RabbitMq__Host: rabbitmq
     depends_on:
       - db
@@ -74,7 +84,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=insights_db;Username=postgres;Password=postgres
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=finance_db;Username=postgres;Password=postgres
+      Jwt__Issuer: TrackMint
+      Jwt__Audience: TrackMint.Client
+      Jwt__SigningKey: trackmint-local-development-signing-key-change-before-production
       RabbitMq__Host: rabbitmq
       FinanceService__BaseUrl: http://finance-service:8080
     depends_on:
@@ -92,6 +105,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=notification_db;Username=postgres;Password=postgres
+      Jwt__Issuer: TrackMint
+      Jwt__Audience: TrackMint.Client
+      Jwt__SigningKey: trackmint-local-development-signing-key-change-before-production
       RabbitMq__Host: rabbitmq
     depends_on:
       - db
