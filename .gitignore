@@ -38,3 +38,6 @@ backend/PersonalFinanceTracker.Api/appsettings.Development.json
 # Docs
 docs/**
 !docs/SETUP.md
+
+# Local Codex memory
+codex-memory-bank/
