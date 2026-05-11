@@ -19,6 +19,8 @@ frontend/.env.local
 # .NET
 backend/**/bin/
 backend/**/obj/
+services/**/bin/
+services/**/obj/
 backend/.vs/
 backend/*.log
 
