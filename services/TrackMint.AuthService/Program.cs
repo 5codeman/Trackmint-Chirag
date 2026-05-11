@@ -19,10 +19,11 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
 });
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
 builder.Services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, global::TrackMint.AuthService.Services.AuthService>();
-builder.Services.AddSingleton<IIntegrationEventPublisher, LoggingIntegrationEventPublisher>();
+builder.Services.AddSingleton<IIntegrationEventPublisher, RabbitMqIntegrationEventPublisher>();
 
 builder.Services.AddCors(options =>
 {

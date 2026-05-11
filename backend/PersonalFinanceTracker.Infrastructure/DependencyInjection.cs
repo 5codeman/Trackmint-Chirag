@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using PersonalFinanceTracker.Application.Abstractions;
 using PersonalFinanceTracker.Infrastructure.Background;
+using PersonalFinanceTracker.Infrastructure.Messaging;
 using PersonalFinanceTracker.Infrastructure.Persistence;
 using PersonalFinanceTracker.Infrastructure.Security;
 using PersonalFinanceTracker.Infrastructure.Seed;
@@ -43,8 +44,12 @@ public static class DependencyInjection
         services.AddScoped<IBalanceService, BalanceService>();
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IDefaultCategorySeeder, DefaultCategorySeeder>();
+        services.AddSingleton<IIntegrationEventPublisher, NoOpIntegrationEventPublisher>();
 
-        services.AddHostedService<RecurringTransactionWorker>();
+        if (configuration.GetValue("Features:EnableRecurringWorker", true))
+        {
+            services.AddHostedService<RecurringTransactionWorker>();
+        }
 
         return services;
     }

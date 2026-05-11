@@ -5,6 +5,7 @@ using PersonalFinanceTracker.Application.Exceptions;
 using PersonalFinanceTracker.Domain.Entities;
 using PersonalFinanceTracker.Domain.Enums;
 using PersonalFinanceTracker.Infrastructure.Persistence;
+using TrackMint.Contracts.Events;
 
 namespace PersonalFinanceTracker.Infrastructure.Services;
 
@@ -14,7 +15,8 @@ public sealed class RecurringTransactionService(
     IAccountAccessService accountAccessService,
     IRuleService ruleService,
     IBalanceService balanceService,
-    IAuditService auditService) : IRecurringTransactionService
+    IAuditService auditService,
+    IIntegrationEventPublisher eventPublisher) : IRecurringTransactionService
 {
     public async Task<IReadOnlyCollection<RecurringTransactionResponse>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -63,6 +65,7 @@ public sealed class RecurringTransactionService(
         }
         await dbTransaction.CommitAsync(cancellationToken);
         await auditService.WriteAsync(userId, "recurring_created", nameof(RecurringTransaction), item.Id, new { item.Title, item.Amount }, cancellationToken);
+        await PublishGeneratedRecurringEventsAsync(item, generatedTransactions, cancellationToken);
 
         var accountIds = await accountAccessService.GetAccessibleAccountIdsAsync(userId, cancellationToken);
         return (await Query(accountIds).SingleAsync(x => x.Id == item.Id, cancellationToken)).ToResponse();
@@ -107,6 +110,7 @@ public sealed class RecurringTransactionService(
         }
         await dbTransaction.CommitAsync(cancellationToken);
         await auditService.WriteAsync(userId, "recurring_updated", nameof(RecurringTransaction), item.Id, new { item.Title, item.Amount }, cancellationToken);
+        await PublishGeneratedRecurringEventsAsync(item, generatedTransactions, cancellationToken);
 
         var accountIds = await accountAccessService.GetAccessibleAccountIdsAsync(userId, cancellationToken);
         return (await Query(accountIds).SingleAsync(x => x.Id == item.Id, cancellationToken)).ToResponse();
@@ -170,6 +174,16 @@ public sealed class RecurringTransactionService(
         }
 
         await dbTransaction.CommitAsync(cancellationToken);
+
+        foreach (var item in dueItems)
+        {
+            var generatedTransactions = await dbContext.Transactions
+                .AsNoTracking()
+                .Where(x => x.RecurringTransactionId == item.Id && x.CreatedAt >= DateTime.UtcNow.AddMinutes(-10))
+                .ToListAsync(cancellationToken);
+
+            await PublishGeneratedRecurringEventsAsync(item, generatedTransactions, cancellationToken);
+        }
     }
 
     private IQueryable<RecurringTransaction> Query(IReadOnlySet<Guid> accountIds) =>
@@ -256,6 +270,23 @@ public sealed class RecurringTransactionService(
         foreach (var ownerId in impactedOwnerIds)
         {
             await balanceService.RecalculateForUserAsync(ownerId, cancellationToken);
+        }
+    }
+
+    private async Task PublishGeneratedRecurringEventsAsync(
+        RecurringTransaction item,
+        IEnumerable<Transaction> generatedTransactions,
+        CancellationToken cancellationToken)
+    {
+        foreach (var transaction in generatedTransactions)
+        {
+            await eventPublisher.PublishAsync(new RecurringTransactionGeneratedEvent
+            {
+                UserId = item.UserId,
+                RecurringTransactionId = item.Id,
+                GeneratedTransactionId = transaction.Id,
+                RunDate = transaction.TransactionDate
+            }, "finance.recurring.generated", cancellationToken);
         }
     }
 }

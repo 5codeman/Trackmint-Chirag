@@ -70,6 +70,7 @@ services:
       Jwt__Issuer: TrackMint
       Jwt__Audience: TrackMint.Client
       Jwt__SigningKey: trackmint-local-development-signing-key-change-before-production
+      Features__EnableRecurringWorker: "true"
       RabbitMq__Host: rabbitmq
     depends_on:
       - db
@@ -88,6 +89,7 @@ services:
       Jwt__Issuer: TrackMint
       Jwt__Audience: TrackMint.Client
       Jwt__SigningKey: trackmint-local-development-signing-key-change-before-production
+      Features__EnableRecurringWorker: "false"
       RabbitMq__Host: rabbitmq
       FinanceService__BaseUrl: http://finance-service:8080
     depends_on:

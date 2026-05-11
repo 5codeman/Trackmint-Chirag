@@ -7,6 +7,7 @@ using TrackMint.Contracts.Events;
 using TrackMint.Contracts.Http;
 using TrackMint.NotificationService.Domain;
 using TrackMint.NotificationService.Dtos;
+using TrackMint.NotificationService.Messaging;
 using TrackMint.NotificationService.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,8 @@ builder.Services.AddDbContext<NotificationDbContext>(options =>
         ?? "Host=localhost;Port=5434;Database=notification_db;Username=postgres;Password=postgres";
     options.UseNpgsql(connectionString);
 });
+builder.Services.Configure<RabbitMqOptions>(builder.Configuration.GetSection("RabbitMq"));
+builder.Services.AddHostedService<NotificationEventConsumer>();
 
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "TrackMint";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "TrackMint.Client";

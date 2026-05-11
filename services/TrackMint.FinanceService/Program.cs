@@ -9,6 +9,8 @@ using PersonalFinanceTracker.Domain.Entities;
 using PersonalFinanceTracker.Infrastructure;
 using PersonalFinanceTracker.Infrastructure.Persistence;
 using PersonalFinanceTracker.Infrastructure.Security;
+using PersonalFinanceTracker.Application.Abstractions;
+using TrackMint.FinanceService.Messaging;
 using TrackMint.Contracts.Events;
 using TrackMint.Contracts.Http;
 
@@ -21,6 +23,7 @@ builder.Services.AddControllers()
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<IIntegrationEventPublisher, RabbitMqIntegrationEventPublisher>();
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
