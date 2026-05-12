@@ -29,6 +29,9 @@ jobs:
           dotnet restore services/TrackMint.NotificationService/TrackMint.NotificationService.csproj
           dotnet restore services/TrackMint.Gateway/TrackMint.Gateway.csproj
           dotnet restore backend/PersonalFinanceTracker.Api/PersonalFinanceTracker.Api.csproj
+          dotnet restore tests/TrackMint.AuthService.Tests/TrackMint.AuthService.Tests.csproj
+          dotnet restore tests/TrackMint.Contracts.Tests/TrackMint.Contracts.Tests.csproj
+          dotnet restore tests/TrackMint.NotificationService.Tests/TrackMint.NotificationService.Tests.csproj
 
       - name: Build services
         run: |
@@ -38,6 +41,12 @@ jobs:
           dotnet build services/TrackMint.NotificationService/TrackMint.NotificationService.csproj --configuration Release --no-restore
           dotnet build services/TrackMint.Gateway/TrackMint.Gateway.csproj --configuration Release --no-restore
           dotnet build backend/PersonalFinanceTracker.Api/PersonalFinanceTracker.Api.csproj --configuration Release --no-restore
+
+      - name: Run service tests
+        run: |
+          dotnet test tests/TrackMint.AuthService.Tests/TrackMint.AuthService.Tests.csproj --configuration Release --no-restore
+          dotnet test tests/TrackMint.Contracts.Tests/TrackMint.Contracts.Tests.csproj --configuration Release --no-restore
+          dotnet test tests/TrackMint.NotificationService.Tests/TrackMint.NotificationService.Tests.csproj --configuration Release --no-restore
 
       - name: Validate compose file
         run: docker compose -f compose.microservices.yaml config
