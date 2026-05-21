@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PersonalFinanceTracker.Domain\PersonalFinanceTracker.Domain.csproj" />
+    <ProjectReference Include="..\..\services\TrackMint.Contracts\TrackMint.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

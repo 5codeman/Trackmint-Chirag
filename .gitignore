@@ -19,6 +19,8 @@ frontend/.env.local
 # .NET
 backend/**/bin/
 backend/**/obj/
+services/**/bin/
+services/**/obj/
 backend/.vs/
 backend/*.log
 
@@ -38,3 +40,6 @@ backend/PersonalFinanceTracker.Api/appsettings.Development.json
 # Docs
 docs/**
 !docs/SETUP.md
+
+# Local Codex memory
+codex-memory-bank/

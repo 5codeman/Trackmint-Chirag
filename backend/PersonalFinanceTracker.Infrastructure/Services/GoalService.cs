@@ -5,6 +5,7 @@ using PersonalFinanceTracker.Application.Exceptions;
 using PersonalFinanceTracker.Domain.Entities;
 using PersonalFinanceTracker.Domain.Enums;
 using PersonalFinanceTracker.Infrastructure.Persistence;
+using TrackMint.Contracts.Events;
 
 namespace PersonalFinanceTracker.Infrastructure.Services;
 
@@ -12,7 +13,8 @@ public sealed class GoalService(
     ApplicationDbContext dbContext,
     ICurrentUserService currentUserService,
     IBalanceService balanceService,
-    IAuditService auditService) : IGoalService
+    IAuditService auditService,
+    IIntegrationEventPublisher eventPublisher) : IGoalService
 {
     public async Task<IReadOnlyCollection<GoalResponse>> GetAllAsync(CancellationToken cancellationToken)
     {
@@ -149,6 +151,7 @@ public sealed class GoalService(
             await dbContext.Transactions.AddAsync(transaction, cancellationToken);
         }
 
+        var wasCompleted = goal.Status == GoalStatus.Completed;
         goal.CurrentAmount = increase ? goal.CurrentAmount + request.Amount : goal.CurrentAmount - request.Amount;
         goal.Status = goal.CurrentAmount >= goal.TargetAmount ? GoalStatus.Completed : GoalStatus.Active;
 
@@ -157,6 +160,17 @@ public sealed class GoalService(
         await dbTransaction.CommitAsync(cancellationToken);
 
         await auditService.WriteAsync(userId, increase ? "goal_contribution" : "goal_withdrawal", nameof(Goal), goal.Id, new { request.Amount }, cancellationToken);
+        if (!wasCompleted && goal.Status == GoalStatus.Completed)
+        {
+            await eventPublisher.PublishAsync(new GoalCompletedEvent
+            {
+                UserId = userId,
+                GoalId = goal.Id,
+                GoalName = goal.Name,
+                TargetAmount = goal.TargetAmount
+            }, "finance.goal.completed", cancellationToken);
+        }
+
         return goal.ToResponse();
     }
 

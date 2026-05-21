@@ -6,6 +6,7 @@ using PersonalFinanceTracker.Application.Exceptions;
 using PersonalFinanceTracker.Domain.Entities;
 using PersonalFinanceTracker.Domain.Enums;
 using PersonalFinanceTracker.Infrastructure.Persistence;
+using TrackMint.Contracts.Events;
 
 namespace PersonalFinanceTracker.Infrastructure.Services;
 
@@ -15,7 +16,8 @@ public sealed class TransactionService(
     IAccountAccessService accountAccessService,
     IBalanceService balanceService,
     IRuleService ruleService,
-    IAuditService auditService) : ITransactionService
+    IAuditService auditService,
+    IIntegrationEventPublisher eventPublisher) : ITransactionService
 {
     public async Task<PagedResult<TransactionResponse>> GetAllAsync(TransactionQueryRequest request, CancellationToken cancellationToken)
     {
@@ -92,6 +94,17 @@ public sealed class TransactionService(
         await dbTransaction.CommitAsync(cancellationToken);
 
         await auditService.WriteAsync(userId, "transaction_created", nameof(Transaction), transaction.Id, new { transaction.Type, transaction.Amount }, cancellationToken);
+        await eventPublisher.PublishAsync(new TransactionCreatedEvent
+        {
+            UserId = userId,
+            TransactionId = transaction.Id,
+            AccountId = transaction.AccountId,
+            CategoryId = transaction.CategoryId,
+            Type = transaction.Type.ToString(),
+            Amount = transaction.Amount,
+            TransactionDate = transaction.TransactionDate
+        }, "finance.transaction.created", cancellationToken);
+        await PublishBudgetThresholdIfNeededAsync(transaction, cancellationToken);
 
         return await GetByIdAsync(transaction.Id, cancellationToken);
     }
@@ -130,6 +143,15 @@ public sealed class TransactionService(
         await dbTransaction.CommitAsync(cancellationToken);
 
         await auditService.WriteAsync(userId, "transaction_updated", nameof(Transaction), transaction.Id, new { transaction.Type, transaction.Amount }, cancellationToken);
+        await eventPublisher.PublishAsync(new TransactionUpdatedEvent
+        {
+            UserId = userId,
+            TransactionId = transaction.Id,
+            AccountId = transaction.AccountId,
+            Type = transaction.Type.ToString(),
+            Amount = transaction.Amount
+        }, "finance.transaction.updated", cancellationToken);
+        await PublishBudgetThresholdIfNeededAsync(transaction, cancellationToken);
 
         return await GetByIdAsync(transaction.Id, cancellationToken);
     }
@@ -148,6 +170,12 @@ public sealed class TransactionService(
         await dbTransaction.CommitAsync(cancellationToken);
 
         await auditService.WriteAsync(userId, "transaction_deleted", nameof(Transaction), transaction.Id, new { transaction.Type, transaction.Amount }, cancellationToken);
+        await eventPublisher.PublishAsync(new TransactionDeletedEvent
+        {
+            UserId = userId,
+            TransactionId = transaction.Id,
+            AccountId = transaction.AccountId
+        }, "finance.transaction.deleted", cancellationToken);
     }
 
     internal static IQueryable<Transaction> ApplyFilters(IQueryable<Transaction> query, TransactionQueryRequest request)
@@ -257,5 +285,55 @@ public sealed class TransactionService(
         {
             await balanceService.RecalculateForUserAsync(ownerId, cancellationToken);
         }
+    }
+
+    private async Task PublishBudgetThresholdIfNeededAsync(Transaction transaction, CancellationToken cancellationToken)
+    {
+        if (transaction.Type != TransactionType.Expense || transaction.CategoryId is null)
+        {
+            return;
+        }
+
+        var budget = await dbContext.Budgets
+            .AsNoTracking()
+            .SingleOrDefaultAsync(x =>
+                x.UserId == transaction.UserId &&
+                x.CategoryId == transaction.CategoryId.Value &&
+                x.Month == transaction.TransactionDate.Month &&
+                x.Year == transaction.TransactionDate.Year,
+                cancellationToken);
+
+        if (budget is null)
+        {
+            return;
+        }
+
+        var monthStart = new DateOnly(budget.Year, budget.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        var actualSpend = await dbContext.Transactions
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == transaction.UserId &&
+                x.Type == TransactionType.Expense &&
+                x.CategoryId == budget.CategoryId &&
+                x.TransactionDate >= monthStart &&
+                x.TransactionDate <= monthEnd)
+            .SumAsync(x => x.Amount, cancellationToken);
+
+        var utilizationPercent = budget.Amount == 0 ? 0 : Math.Round((actualSpend / budget.Amount) * 100, 2);
+        if (utilizationPercent < budget.AlertThresholdPercent)
+        {
+            return;
+        }
+
+        await eventPublisher.PublishAsync(new BudgetThresholdCrossedEvent
+        {
+            UserId = transaction.UserId,
+            BudgetId = budget.Id,
+            CategoryId = budget.CategoryId,
+            BudgetAmount = budget.Amount,
+            ActualSpend = actualSpend,
+            UtilizationPercent = utilizationPercent
+        }, "finance.budget.threshold_crossed", cancellationToken);
     }
 }

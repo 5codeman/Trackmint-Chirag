@@ -1,0 +1,52 @@
+name: Microservices CI
+
+on:
+  push:
+    branches:
+      - microservices
+  pull_request:
+    branches:
+      - microservices
+
+jobs:
+  build-services:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore services
+        run: |
+          dotnet restore services/TrackMint.AuthService/TrackMint.AuthService.csproj
+          dotnet restore services/TrackMint.FinanceService/TrackMint.FinanceService.csproj
+          dotnet restore services/TrackMint.InsightsService/TrackMint.InsightsService.csproj
+          dotnet restore services/TrackMint.NotificationService/TrackMint.NotificationService.csproj
+          dotnet restore services/TrackMint.Gateway/TrackMint.Gateway.csproj
+          dotnet restore backend/PersonalFinanceTracker.Api/PersonalFinanceTracker.Api.csproj
+          dotnet restore tests/TrackMint.AuthService.Tests/TrackMint.AuthService.Tests.csproj
+          dotnet restore tests/TrackMint.Contracts.Tests/TrackMint.Contracts.Tests.csproj
+          dotnet restore tests/TrackMint.NotificationService.Tests/TrackMint.NotificationService.Tests.csproj
+
+      - name: Build services
+        run: |
+          dotnet build services/TrackMint.AuthService/TrackMint.AuthService.csproj --configuration Release --no-restore
+          dotnet build services/TrackMint.FinanceService/TrackMint.FinanceService.csproj --configuration Release --no-restore
+          dotnet build services/TrackMint.InsightsService/TrackMint.InsightsService.csproj --configuration Release --no-restore
+          dotnet build services/TrackMint.NotificationService/TrackMint.NotificationService.csproj --configuration Release --no-restore
+          dotnet build services/TrackMint.Gateway/TrackMint.Gateway.csproj --configuration Release --no-restore
+          dotnet build backend/PersonalFinanceTracker.Api/PersonalFinanceTracker.Api.csproj --configuration Release --no-restore
+
+      - name: Run service tests
+        run: |
+          dotnet test tests/TrackMint.AuthService.Tests/TrackMint.AuthService.Tests.csproj --configuration Release --no-restore
+          dotnet test tests/TrackMint.Contracts.Tests/TrackMint.Contracts.Tests.csproj --configuration Release --no-restore
+          dotnet test tests/TrackMint.NotificationService.Tests/TrackMint.NotificationService.Tests.csproj --configuration Release --no-restore
+
+      - name: Validate compose file
+        run: docker compose -f compose.microservices.yaml config
