@@ -40,6 +40,9 @@ services:
       ServiceUrls__FinanceService: http://finance-service:8080
       ServiceUrls__InsightsService: http://insights-service:8080
       ServiceUrls__NotificationService: http://notification-service:8080
+      Jwt__Issuer: TrackMint
+      Jwt__Audience: TrackMint.Client
+      Jwt__SigningKey: trackmint-local-development-signing-key-change-before-production
     depends_on:
       - auth-service
       - finance-service

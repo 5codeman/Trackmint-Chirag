@@ -238,3 +238,14 @@ export type Rule = {
   isActive: boolean;
   priority: number;
 };
+
+export type Notification = {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAtUtc: string;
+  readAtUtc?: string;
+};
