@@ -21,6 +21,8 @@ backend/**/bin/
 backend/**/obj/
 services/**/bin/
 services/**/obj/
+tests/**/bin/
+tests/**/obj/
 backend/.vs/
 backend/*.log
 

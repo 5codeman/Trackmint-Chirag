@@ -1,0 +1,12 @@
+.git
+.github
+**/bin
+**/obj
+**/node_modules
+**/.env
+**/.env.local
+codex-memory-bank
+docs
+backend-build-check
+tests/**/TestResults
+README.md

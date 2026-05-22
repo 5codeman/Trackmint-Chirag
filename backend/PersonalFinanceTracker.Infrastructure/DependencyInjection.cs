@@ -58,6 +58,24 @@ public static class DependencyInjection
     {
         await using var scope = serviceProvider.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ApplicationDbContext>>();
+
+        const int maxAttempts = 10;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await dbContext.Database.EnsureCreatedAsync();
+                await EnsureV2SchemaAsync(dbContext);
+                return;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                logger.LogWarning(ex, "Database initialization failed on attempt {Attempt}. Retrying...", attempt);
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+        }
+
         await dbContext.Database.EnsureCreatedAsync();
         await EnsureV2SchemaAsync(dbContext);
     }
