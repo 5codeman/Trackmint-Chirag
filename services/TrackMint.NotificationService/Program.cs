@@ -108,6 +108,14 @@ notifications.MapGet("/", async (NotificationDbContext dbContext, HttpContext co
     return Results.Ok(items);
 });
 
+notifications.MapGet("/unread-count", async (NotificationDbContext dbContext, HttpContext context, CancellationToken cancellationToken) =>
+{
+    var userId = GetCurrentUserId(context);
+    var count = await dbContext.Notifications.CountAsync(x => x.UserId == userId && !x.IsRead, cancellationToken);
+
+    return Results.Ok(new { count });
+});
+
 notifications.MapPost("/", async (CreateNotificationRequest request, NotificationDbContext dbContext, CancellationToken cancellationToken) =>
 {
     if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Message))
@@ -127,6 +135,23 @@ notifications.MapPost("/", async (CreateNotificationRequest request, Notificatio
     await dbContext.SaveChangesAsync(cancellationToken);
 
     return Results.Created($"/api/notifications/{notification.Id}", ToResponse(notification));
+});
+
+notifications.MapPut("/read-all", async (NotificationDbContext dbContext, HttpContext context, CancellationToken cancellationToken) =>
+{
+    var userId = GetCurrentUserId(context);
+    var unreadNotifications = await dbContext.Notifications
+        .Where(x => x.UserId == userId && !x.IsRead)
+        .ToListAsync(cancellationToken);
+
+    foreach (var notification in unreadNotifications)
+    {
+        notification.IsRead = true;
+        notification.ReadAtUtc = DateTime.UtcNow;
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok(new { updated = unreadNotifications.Count });
 });
 
 notifications.MapPut("/{id:guid}/read", async (Guid id, NotificationDbContext dbContext, HttpContext context, CancellationToken cancellationToken) =>

@@ -12,8 +12,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: PersonalFinanceTracker.Api/Dockerfile
+      context: .
+      dockerfile: backend/PersonalFinanceTracker.Api/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=personal_finance_tracker;Username=postgres;Password=postgres

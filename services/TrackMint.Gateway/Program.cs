@@ -1,10 +1,34 @@
 using System.Net;
+using System.Text;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using TrackMint.Contracts.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "TrackMint";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "TrackMint.Client";
+var jwtSigningKey = builder.Configuration["Jwt:SigningKey"] ?? "replace-this-in-production-with-a-long-random-key";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey))
+        };
+    });
+builder.Services.AddAuthorization();
+
 builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
@@ -26,6 +50,7 @@ builder.Services.Configure<ServiceUrls>(builder.Configuration.GetSection("Servic
 
 var app = builder.Build();
 
+app.UseAuthentication();
 app.UseRateLimiter();
 app.Use(async (context, next) =>
 {
@@ -41,6 +66,28 @@ app.Use(async (context, next) =>
 
     await next();
 });
+
+app.Use(async (context, next) =>
+{
+    if (!RequiresAuthentication(context.Request.Path))
+    {
+        await next();
+        return;
+    }
+
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        await next();
+        return;
+    }
+
+    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+    await context.Response.WriteAsJsonAsync(new
+    {
+        message = "Authentication is required at the gateway."
+    });
+});
+app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new
 {
@@ -133,6 +180,28 @@ static GatewayRoute? ResolveRoute(PathString path, IConfiguration configuration)
     }
 
     return null;
+}
+
+static bool RequiresAuthentication(PathString path)
+{
+    var value = path.Value ?? string.Empty;
+
+    if (value.Equals("/health", StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    if (value.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    if (value.EndsWith("/service-info", StringComparison.OrdinalIgnoreCase))
+    {
+        return false;
+    }
+
+    return value.StartsWith("/api/", StringComparison.OrdinalIgnoreCase);
 }
 
 static Uri BuildTargetUri(HttpContext context, string baseUrl)

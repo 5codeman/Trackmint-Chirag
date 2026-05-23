@@ -11,6 +11,7 @@ import { AccountsPage } from "./features/accounts/AccountsPage";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import { InsightsPage } from "./features/insights/InsightsPage";
 import { RulesPage } from "./features/rules/RulesPage";
+import { NotificationsPage } from "./features/notifications/NotificationsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const session = useAuthStore((state) => state.session);
@@ -135,6 +136,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <RulesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />

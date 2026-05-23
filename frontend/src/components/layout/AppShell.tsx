@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, ArrowLeftRight, PiggyBank, Target, ChartColumnBig, Repeat2, WalletCards, Settings, LogOut, Menu, X, Sparkles, SlidersHorizontal } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { LayoutDashboard, ArrowLeftRight, PiggyBank, Target, ChartColumnBig, Repeat2, WalletCards, Settings, LogOut, Menu, X, Sparkles, SlidersHorizontal, Bell } from "lucide-react";
 import { useAuthStore } from "../../store/auth-store";
+import { api } from "../../services/api/client";
 
 const navigation = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -11,6 +13,7 @@ const navigation = [
   { to: "/reports", label: "Reports", icon: ChartColumnBig },
   { to: "/insights", label: "Insights", icon: Sparkles },
   { to: "/rules", label: "Rules", icon: SlidersHorizontal },
+  { to: "/notifications", label: "Notifications", icon: Bell },
   { to: "/recurring", label: "Recurring", icon: Repeat2 },
   { to: "/accounts", label: "Accounts", icon: WalletCards },
   { to: "/settings", label: "Settings", icon: Settings },
@@ -21,6 +24,12 @@ export function AppShell({ title, children }: { title: string; children: React.R
   const clearSession = useAuthStore((state) => state.clearSession);
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { data: unreadNotifications } = useQuery({
+    queryKey: ["notifications-unread-count"],
+    queryFn: async () => (await api.get<{ count: number }>("/notifications/unread-count")).data.count,
+    enabled: Boolean(session),
+    refetchInterval: 30000,
+  });
   const displayName = session?.displayName ?? "User";
   const initials = displayName
     .split(" ")
@@ -53,6 +62,9 @@ export function AppShell({ title, children }: { title: string; children: React.R
               <NavLink key={item.to} to={item.to} end={item.to === "/"} className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
                 <Icon size={18} />
                 <span>{item.label}</span>
+                {item.to === "/notifications" && (unreadNotifications ?? 0) > 0 && (
+                  <span className="nav-link__badge">{unreadNotifications}</span>
+                )}
               </NavLink>
             );
           })}

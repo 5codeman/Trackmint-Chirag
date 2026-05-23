@@ -10,6 +10,11 @@ services:
     volumes:
       - trackmint-ms-db:/var/lib/postgresql/data
       - ./services/postgres/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d trackmint_microservices"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -19,6 +24,11 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   gateway:
     build:
@@ -30,6 +40,9 @@ services:
       ServiceUrls__FinanceService: http://finance-service:8080
       ServiceUrls__InsightsService: http://insights-service:8080
       ServiceUrls__NotificationService: http://notification-service:8080
+      Jwt__Issuer: TrackMint
+      Jwt__Audience: TrackMint.Client
+      Jwt__SigningKey: trackmint-local-development-signing-key-change-before-production
     depends_on:
       - auth-service
       - finance-service
@@ -54,8 +67,10 @@ services:
       Jwt__PasswordResetMinutes: 15
       RabbitMq__Host: rabbitmq
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "5101:8080"
 
@@ -73,8 +88,10 @@ services:
       Features__EnableRecurringWorker: "true"
       RabbitMq__Host: rabbitmq
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "5102:8080"
 
@@ -93,9 +110,12 @@ services:
       RabbitMq__Host: rabbitmq
       FinanceService__BaseUrl: http://finance-service:8080
     depends_on:
-      - db
-      - rabbitmq
-      - finance-service
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      finance-service:
+        condition: service_started
     ports:
       - "5103:8080"
 
@@ -112,8 +132,10 @@ services:
       Jwt__SigningKey: trackmint-local-development-signing-key-change-before-production
       RabbitMq__Host: rabbitmq
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "5104:8080"
 
