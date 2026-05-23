@@ -236,9 +236,7 @@ GitHub Actions validates the microservices branch by running:
 - Docker Compose config validation
 - Docker image builds
 
-## Interview Highlights
-
-This project demonstrates:
+## This project demonstrates:
 
 - Microservices architecture with clear service boundaries
 - API Gateway pattern
@@ -251,7 +249,7 @@ This project demonstrates:
 - CI pipeline for build, tests, compose validation, and image builds
 - Unit testing around security, contracts, and event mapping
 
-## Production Improvements
+## Production Improvements - [TO-DO]
 
 Future production hardening can include:
 
